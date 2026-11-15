@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   calculateDaysRemaining,
+  calculateDaysOpened,
+  formatOpenedBadge,
   getUrgencyStatus,
   sortItemsByUrgency,
   filterItems,
@@ -23,6 +25,62 @@ describe("Expiration Countdown & Urgency Badges", () => {
   it("calculates positive days for future items", () => {
     const days = calculateDaysRemaining("2026-11-17", refDate);
     expect(days).toBe(3);
+  });
+
+  describe("Opened Date Tracking & Badges", () => {
+    it("calculates 0 days opened when opened on the same day", () => {
+      const days = calculateDaysOpened("2026-11-14", refDate);
+      expect(days).toBe(0);
+    });
+
+    it("calculates 1 day opened when opened yesterday", () => {
+      const days = calculateDaysOpened("2026-11-13", refDate);
+      expect(days).toBe(1);
+    });
+
+    it("calculates multiple elapsed days for past opened dates", () => {
+      const days = calculateDaysOpened("2026-11-09", refDate);
+      expect(days).toBe(5);
+    });
+
+    it("clamps to 0 days when opened date is in the future", () => {
+      const days = calculateDaysOpened("2026-11-20", refDate);
+      expect(days).toBe(0);
+    });
+
+    it("handles Date objects correctly", () => {
+      const pastDate = new Date("2026-11-12T10:00:00Z");
+      const days = calculateDaysOpened(pastDate, refDate);
+      expect(days).toBe(2);
+    });
+
+    it("returns null for null, undefined, empty, or invalid dates", () => {
+      expect(calculateDaysOpened(null, refDate)).toBeNull();
+      expect(calculateDaysOpened(undefined, refDate)).toBeNull();
+      expect(calculateDaysOpened("", refDate)).toBeNull();
+      expect(calculateDaysOpened("invalid-date", refDate)).toBeNull();
+    });
+
+    it("formats opened badge with date and elapsed days: 已開封 (MM/DD, X天)", () => {
+      // Same day (0 days)
+      expect(formatOpenedBadge("2026-11-14", refDate)).toBe("已開封 (11/14, 0天)");
+      // Yesterday (1 day)
+      expect(formatOpenedBadge("2026-11-13", refDate)).toBe("已開封 (11/13, 1天)");
+      // 5 days ago
+      expect(formatOpenedBadge("2026-11-09", refDate)).toBe("已開封 (11/09, 5天)");
+    });
+
+    it("formats opened badge from Date objects", () => {
+      const dateObj = new Date("2026-11-10T08:00:00Z");
+      expect(formatOpenedBadge(dateObj, refDate)).toBe("已開封 (11/10, 4天)");
+    });
+
+    it("falls back to generic '已開封' for null, undefined, empty, or invalid input", () => {
+      expect(formatOpenedBadge(null, refDate)).toBe("已開封");
+      expect(formatOpenedBadge(undefined, refDate)).toBe("已開封");
+      expect(formatOpenedBadge("", refDate)).toBe("已開封");
+      expect(formatOpenedBadge("not-a-date", refDate)).toBe("已開封");
+    });
   });
 
   describe("Traffic-Light Badges (Red <= 0, Yellow <= 3, Green > 3)", () => {

@@ -6,6 +6,7 @@ import { ItemCard } from "@/components/ItemCard";
 import { ItemModal } from "@/components/ItemModal";
 import { HouseholdModal } from "@/components/HouseholdModal";
 import { LineBindingModal } from "@/components/LineBindingModal";
+import { PullToRefresh } from "@/components/PullToRefresh";
 import {
   InventoryItem,
   ItemType,
@@ -33,6 +34,7 @@ const INITIAL_ITEMS: InventoryItem[] = [
     expiry_date: new Date().toISOString().split("T")[0],
     quantity: 1,
     is_opened: true,
+    opened_date: new Date().toISOString().split("T")[0],
     status: "active",
   },
   {
@@ -158,6 +160,7 @@ export default function HomePage() {
               expiry_date: item.expiry_date,
               quantity: item.quantity,
               is_opened: item.is_opened,
+              opened_date: item.opened_date || null,
               barcode_image_url: item.barcode_image_url || null,
               notes: item.notes || null,
               status: item.status,
@@ -192,6 +195,34 @@ export default function HomePage() {
     await updateItemInDb(id, { status: newStatus });
   };
 
+  // Handle quantity update (Quick [-1] decrement or stepper)
+  const handleUpdateQuantity = async (id: string, newQuantity: number) => {
+    if (newQuantity < 1) return;
+
+    // 1. Optimistic local update
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, quantity: newQuantity } : item))
+    );
+
+    // 2. Sync to Supabase
+    await updateItemInDb(id, { quantity: newQuantity });
+  };
+
+  // Handle quick mark opened from card
+  const handleMarkOpened = async (id: string, openedDate?: string) => {
+    const targetDate = openedDate || new Date().toISOString().split("T")[0];
+
+    // 1. Optimistic local update
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, is_opened: true, opened_date: targetDate } : item
+      )
+    );
+
+    // 2. Sync to Supabase
+    await updateItemInDb(id, { is_opened: true, opened_date: targetDate });
+  };
+
   // Handle Item Save (Add or Edit)
   const handleSaveItem = async (itemData: Partial<InventoryItem>) => {
     if (itemData.id) {
@@ -211,6 +242,9 @@ export default function HomePage() {
         expiry_date: itemData.expiry_date || new Date().toISOString().split("T")[0],
         quantity: itemData.quantity || 1,
         is_opened: itemData.is_opened || false,
+        opened_date: itemData.is_opened
+          ? itemData.opened_date || new Date().toISOString().split("T")[0]
+          : null,
         barcode_image_url: itemData.barcode_image_url || null,
         notes: itemData.notes || null,
         status: "active" as const,
@@ -287,7 +321,8 @@ export default function HomePage() {
       />
 
       <main className="max-w-md w-full mx-auto px-4 pt-4 flex-1">
-        {/* Cloud Sync Status Indicator */}
+        <PullToRefresh onRefresh={syncWithCloud}>
+          {/* Cloud Sync Status Indicator */}
         <div className="flex items-center justify-between text-[11px] px-2 py-1 mb-2 text-slate-500 bg-white rounded-lg border border-slate-200/60 shadow-xs">
           <span className="flex items-center gap-1.5 font-medium">
             {syncStatus === "syncing" && (
@@ -420,6 +455,8 @@ export default function HomePage() {
                 key={item.id}
                 item={item}
                 onStatusChange={handleStatusChange}
+                onUpdateQuantity={handleUpdateQuantity}
+                onMarkOpened={handleMarkOpened}
                 onEdit={(target) => {
                   setEditingItem(target);
                   setIsItemModalOpen(true);
@@ -428,6 +465,7 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        </PullToRefresh>
       </main>
 
       {/* Floating Action Button (+) */}

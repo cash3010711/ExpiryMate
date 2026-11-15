@@ -20,11 +20,100 @@ export interface InventoryItem {
   expiry_date: string; // YYYY-MM-DD
   quantity: number;
   is_opened: boolean;
+  opened_date?: string | null;
   barcode_image_url?: string | null;
   notes?: string | null;
   status: ItemStatus;
   created_at?: string;
   updated_at?: string;
+}
+
+/**
+ * Calculates calendar days elapsed since the item was opened.
+ * Strips time of day to ensure pure calendar day comparison (UTC).
+ * If openedDateStr is null/undefined/empty, returns null.
+ * When openedDate matches referenceDate, returns 0.
+ * If opened in the future, returns 0.
+ */
+export function calculateDaysOpened(
+  openedDateStr: string | Date | null | undefined,
+  referenceDate: Date = new Date()
+): number | null {
+  if (!openedDateStr) return null;
+
+  let opUtc: number;
+  if (typeof openedDateStr === "string") {
+    const trimmed = openedDateStr.trim();
+    if (!trimmed) return null;
+    const parts = trimmed.split("-").map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      opUtc = Date.UTC(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      const parsed = new Date(trimmed);
+      if (isNaN(parsed.getTime())) return null;
+      opUtc = Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate());
+    }
+  } else if (openedDateStr instanceof Date) {
+    if (isNaN(openedDateStr.getTime())) return null;
+    opUtc = Date.UTC(
+      openedDateStr.getFullYear(),
+      openedDateStr.getMonth(),
+      openedDateStr.getDate()
+    );
+  } else {
+    return null;
+  }
+
+  const refUtc = Date.UTC(
+    referenceDate.getFullYear(),
+    referenceDate.getMonth(),
+    referenceDate.getDate()
+  );
+
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const diffDays = Math.round((refUtc - opUtc) / msPerDay);
+  return Math.max(0, diffDays);
+}
+
+/**
+ * Formats opened badge text.
+ * If openedDate is valid, returns: "已開封 (MM/DD, X天)"
+ * If openedDate is null or invalid, returns fallback: "已開封"
+ */
+export function formatOpenedBadge(
+  openedDateStr: string | Date | null | undefined,
+  referenceDate: Date = new Date()
+): string {
+  if (!openedDateStr) {
+    return "已開封";
+  }
+
+  const days = calculateDaysOpened(openedDateStr, referenceDate);
+  if (days === null) {
+    return "已開封";
+  }
+
+  let monthStr = "";
+  let dayStr = "";
+
+  if (typeof openedDateStr === "string") {
+    const parts = openedDateStr.trim().split("-").map(Number);
+    if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+      monthStr = String(parts[1]).padStart(2, "0");
+      dayStr = String(parts[2]).padStart(2, "0");
+    } else {
+      const parsed = new Date(openedDateStr);
+      if (isNaN(parsed.getTime())) return "已開封";
+      monthStr = String(parsed.getMonth() + 1).padStart(2, "0");
+      dayStr = String(parsed.getDate()).padStart(2, "0");
+    }
+  } else if (openedDateStr instanceof Date) {
+    if (isNaN(openedDateStr.getTime())) return "已開封";
+    monthStr = String(openedDateStr.getMonth() + 1).padStart(2, "0");
+    dayStr = String(openedDateStr.getDate()).padStart(2, "0");
+  }
+
+  return `已開封 (${monthStr}/${dayStr}, ${days}天)`;
 }
 
 /**

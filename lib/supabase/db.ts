@@ -78,6 +78,7 @@ export async function fetchHouseholdItems(householdId: string): Promise<Inventor
       expiry_date: row.expiry_date,
       quantity: row.quantity,
       is_opened: row.is_opened,
+      opened_date: row.opened_date || null,
       barcode_image_url: row.barcode_image_url,
       notes: row.notes,
       status: row.status as "active" | "consumed" | "discarded",
@@ -107,6 +108,7 @@ export async function insertItemToDb(item: Omit<InventoryItem, "id">): Promise<I
         expiry_date: item.expiry_date,
         quantity: item.quantity,
         is_opened: item.is_opened,
+        opened_date: item.opened_date || null,
         barcode_image_url: item.barcode_image_url || null,
         notes: item.notes || null,
         status: item.status,
@@ -128,6 +130,7 @@ export async function insertItemToDb(item: Omit<InventoryItem, "id">): Promise<I
       expiry_date: data.expiry_date,
       quantity: data.quantity,
       is_opened: data.is_opened,
+      opened_date: data.opened_date || null,
       barcode_image_url: data.barcode_image_url,
       notes: data.notes,
       status: data.status as "active" | "consumed" | "discarded",
@@ -157,6 +160,7 @@ export async function updateItemInDb(id: string, updates: Partial<InventoryItem>
     if (updates.expiry_date !== undefined) payload.expiry_date = updates.expiry_date;
     if (updates.quantity !== undefined) payload.quantity = updates.quantity;
     if (updates.is_opened !== undefined) payload.is_opened = updates.is_opened;
+    if (updates.opened_date !== undefined) payload.opened_date = updates.opened_date;
     if (updates.notes !== undefined) payload.notes = updates.notes;
     if (updates.barcode_image_url !== undefined) payload.barcode_image_url = updates.barcode_image_url;
 

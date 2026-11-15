@@ -26,6 +26,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [expiryDate, setExpiryDate] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [isOpened, setIsOpened] = useState(false);
+  const [openedDate, setOpenedDate] = useState("");
   const [barcodeImageUrl, setBarcodeImageUrl] = useState("");
   const [notes, setNotes] = useState("");
   const [showCaptureModal, setShowCaptureModal] = useState(false);
@@ -38,6 +39,10 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       setExpiryDate(editingItem.expiry_date);
       setQuantity(editingItem.quantity || 1);
       setIsOpened(editingItem.is_opened || false);
+      setOpenedDate(
+        editingItem.opened_date ||
+          (editingItem.is_opened ? new Date().toISOString().split("T")[0] : "")
+      );
       setBarcodeImageUrl(editingItem.barcode_image_url || "");
       setNotes(editingItem.notes || "");
     } else {
@@ -49,6 +54,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       setExpiryDate(defaultDate);
       setQuantity(1);
       setIsOpened(false);
+      setOpenedDate(new Date().toISOString().split("T")[0]);
       setBarcodeImageUrl("");
       setNotes("");
     }
@@ -68,6 +74,7 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       expiry_date: expiryDate,
       quantity,
       is_opened: isOpened,
+      opened_date: isOpened ? (openedDate || new Date().toISOString().split("T")[0]) : null,
       barcode_image_url: barcodeImageUrl.trim() || null,
       notes: notes.trim() || null,
     });
@@ -196,17 +203,40 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                   />
                 </div>
 
-                <div className="col-span-2 flex items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="is_opened"
-                    checked={isOpened}
-                    onChange={(e) => setIsOpened(e.target.checked)}
-                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
-                  />
-                  <label htmlFor="is_opened" className="text-xs text-slate-700 font-medium">
-                    已開封 (提醒盡速食用)
-                  </label>
+                <div className="col-span-2 space-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="is_opened"
+                      checked={isOpened}
+                      onChange={(e) => {
+                        const checked = e.target.checked;
+                        setIsOpened(checked);
+                        if (checked && !openedDate) {
+                          setOpenedDate(new Date().toISOString().split("T")[0]);
+                        }
+                      }}
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500"
+                    />
+                    <label htmlFor="is_opened" className="text-xs text-slate-700 font-medium cursor-pointer">
+                      已開封 (提醒盡速食用)
+                    </label>
+                  </div>
+
+                  {isOpened && (
+                    <div className="pl-6 pt-1">
+                      <label htmlFor="opened_date_input" className="block text-[11px] font-semibold text-slate-600 mb-1">
+                        開封日期
+                      </label>
+                      <input
+                        type="date"
+                        id="opened_date_input"
+                        value={openedDate}
+                        onChange={(e) => setOpenedDate(e.target.value)}
+                        className="w-full text-xs border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-emerald-500 bg-white"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (

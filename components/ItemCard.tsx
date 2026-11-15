@@ -1,16 +1,24 @@
 "use client";
 
 import React, { useState } from "react";
-import { InventoryItem, getUrgencyStatus } from "@/lib/expiration/engine";
+import { InventoryItem, getUrgencyStatus, formatOpenedBadge } from "@/lib/expiration/engine";
 import { Check, Trash2, RotateCcw, QrCode, AlertCircle, Clock } from "lucide-react";
 
 interface ItemCardProps {
   item: InventoryItem;
   onStatusChange: (id: string, newStatus: "active" | "consumed" | "discarded") => void;
   onEdit?: (item: InventoryItem) => void;
+  onUpdateQuantity?: (id: string, newQuantity: number) => void;
+  onMarkOpened?: (id: string, openedDate?: string) => void;
 }
 
-export const ItemCard: React.FC<ItemCardProps> = ({ item, onStatusChange, onEdit }) => {
+export const ItemCard: React.FC<ItemCardProps> = ({
+  item,
+  onStatusChange,
+  onEdit,
+  onUpdateQuantity,
+  onMarkOpened,
+}) => {
   const [showBarcode, setShowBarcode] = useState(false);
   const urgency = getUrgencyStatus(item.expiry_date);
 
@@ -39,8 +47,23 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onStatusChange, onEdit
             </span>
             {isFood && item.is_opened && (
               <span className="text-[11px] px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">
-                已開封
+                {formatOpenedBadge(item.opened_date)}
               </span>
+            )}
+            {isFood && !item.is_opened && item.status === "active" && onMarkOpened && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const today = new Date().toISOString().split("T")[0];
+                  onMarkOpened(item.id, today);
+                }}
+                className="text-[11px] px-2 py-0.5 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 font-medium transition cursor-pointer"
+                title="一鍵標記已開封"
+                aria-label="一鍵標記已開封"
+              >
+                標記開封
+              </button>
             )}
             <span className="text-[11px] text-slate-400">
               到期日: {item.expiry_date}
@@ -57,11 +80,27 @@ export const ItemCard: React.FC<ItemCardProps> = ({ item, onStatusChange, onEdit
           </h3>
         </div>
 
-        {/* Quantity */}
+        {/* Quantity & Decrement */}
         {item.quantity > 1 && (
-          <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-md">
-            x{item.quantity}
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="text-xs bg-slate-100 text-slate-600 font-semibold px-2 py-1 rounded-md">
+              x{item.quantity}
+            </span>
+            {item.status === "active" && onUpdateQuantity && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onUpdateQuantity(item.id, item.quantity - 1);
+                }}
+                className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold px-2 py-1 rounded-md transition active:scale-95 cursor-pointer shadow-xs"
+                title="快速扣減 1"
+                aria-label="快速扣減 1"
+              >
+                -1
+              </button>
+            )}
+          </div>
         )}
       </div>
 

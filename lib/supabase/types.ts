@@ -63,6 +63,7 @@ export interface Database {
           expiry_date: string;
           quantity: number;
           is_opened: boolean;
+          opened_date: string | null;
           barcode_image_url: string | null;
           notes: string | null;
           status: "active" | "consumed" | "discarded";
@@ -79,6 +80,7 @@ export interface Database {
           expiry_date: string;
           quantity?: number;
           is_opened?: boolean;
+          opened_date?: string | null;
           barcode_image_url?: string | null;
           notes?: string | null;
           status?: "active" | "consumed" | "discarded";
@@ -95,6 +97,7 @@ export interface Database {
           expiry_date?: string;
           quantity?: number;
           is_opened?: boolean;
+          opened_date?: string | null;
           barcode_image_url?: string | null;
           notes?: string | null;
           status?: "active" | "consumed" | "discarded";
