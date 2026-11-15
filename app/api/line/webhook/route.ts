@@ -96,14 +96,35 @@ export async function POST(req: NextRequest) {
 
         if (bindingCode) {
           const targetGroupId = event.source.groupId || event.source.roomId || event.source.userId;
-          // In actual deployment, this updates Supabase line_bindings.
+          const replyText = `【ExpiryMate 效期管家】綁定成功！🎉\n此群組已成功連結，系統每日 08:30 將自動發送即期物品提醒。`;
+
+          // If accessToken and replyToken are present, send message back to LINE
+          const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+          if (accessToken && event.replyToken) {
+            try {
+              await fetch("https://api.line.me/v2/bot/message/reply", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({
+                  replyToken: event.replyToken,
+                  messages: [{ type: "text", text: replyText }],
+                }),
+              });
+            } catch (replyErr) {
+              console.error("LINE reply API failed:", replyErr);
+            }
+          }
+
           results.push({
             eventId: deduplicationId,
             status: "success",
             action: "household_bound",
             bindingCode,
             targetGroupId,
-            replyMessage: `【ExpiryMate】綁定成功！此群組已成功連結，系統每日 08:30 將自動發送即期物品提醒。`,
+            replyMessage: replyText,
           });
           continue;
         }
