@@ -148,7 +148,16 @@ export default function HomePage() {
         setHouseholdId(hh.id);
         const cloudItems = await fetchHouseholdItems(hh.id);
         if (cloudItems.length > 0) {
-          setItems(cloudItems);
+          // Merge with any unsynced local temporary items to prevent items disappearing
+          setItems((prev) => {
+            const tempItems = prev.filter((item) => item.id.startsWith("temp-"));
+            if (tempItems.length === 0) return cloudItems;
+
+            // Keep temp items at the top while merging with cloudItems
+            const cloudIds = new Set(cloudItems.map((ci) => ci.id));
+            const validTempItems = tempItems.filter((ti) => !cloudIds.has(ti.id));
+            return [...validTempItems, ...cloudItems];
+          });
         } else {
           // If cloud has no items for this household yet, upload local items to cloud
           for (const item of items) {
@@ -178,7 +187,7 @@ export default function HomePage() {
       console.warn("Cloud sync failed, continuing offline/local:", err);
     }
     setSyncStatus("offline");
-  }, [household.name, household.inviteCode]);
+  }, [household.name, household.inviteCode, items]);
 
   useEffect(() => {
     syncWithCloud();

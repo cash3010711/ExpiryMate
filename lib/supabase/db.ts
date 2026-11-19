@@ -93,28 +93,47 @@ export async function fetchHouseholdItems(householdId: string): Promise<Inventor
 
 /**
  * Inserts a new item into Supabase.
+ * Includes graceful schema fallback if 'opened_date' column doesn't exist yet in Supabase schema.
  */
 export async function insertItemToDb(item: Omit<InventoryItem, "id">): Promise<InventoryItem | null> {
   const supabase = getSupabaseBrowserClient() as any;
 
+  const payload: Record<string, any> = {
+    household_id: item.household_id,
+    type: item.type,
+    title: item.title,
+    category_or_location: item.category_or_location || null,
+    expiry_date: item.expiry_date,
+    quantity: item.quantity,
+    is_opened: item.is_opened,
+    barcode_image_url: item.barcode_image_url || null,
+    notes: item.notes || null,
+    status: item.status,
+  };
+
+  if (item.opened_date !== undefined && item.opened_date !== null) {
+    payload.opened_date = item.opened_date;
+  }
+
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("items")
-      .insert({
-        household_id: item.household_id,
-        type: item.type,
-        title: item.title,
-        category_or_location: item.category_or_location || null,
-        expiry_date: item.expiry_date,
-        quantity: item.quantity,
-        is_opened: item.is_opened,
-        opened_date: item.opened_date || null,
-        barcode_image_url: item.barcode_image_url || null,
-        notes: item.notes || null,
-        status: item.status,
-      })
+      .insert(payload)
       .select("*")
       .single();
+
+    // Graceful fallback if 'opened_date' column does not exist in schema cache
+    if (error && error.message && error.message.includes("opened_date")) {
+      console.warn("Retrying insert without 'opened_date' due to schema compatibility:", error.message);
+      delete payload.opened_date;
+      const retry = await supabase
+        .from("items")
+        .insert(payload)
+        .select("*")
+        .single();
+      data = retry.data;
+      error = retry.error;
+    }
 
     if (error) {
       console.error("Failed to insert item into Supabase:", error.message);
@@ -130,7 +149,7 @@ export async function insertItemToDb(item: Omit<InventoryItem, "id">): Promise<I
       expiry_date: data.expiry_date,
       quantity: data.quantity,
       is_opened: data.is_opened,
-      opened_date: data.opened_date || null,
+      opened_date: data.opened_date || item.opened_date || null,
       barcode_image_url: data.barcode_image_url,
       notes: data.notes,
       status: data.status as "active" | "consumed" | "discarded",
@@ -145,6 +164,7 @@ export async function insertItemToDb(item: Omit<InventoryItem, "id">): Promise<I
 
 /**
  * Updates an item's status or fields in Supabase.
+ * Gracefully ignores schema error if opened_date is not present in DB.
  */
 export async function updateItemInDb(id: string, updates: Partial<InventoryItem>): Promise<boolean> {
   const supabase = getSupabaseBrowserClient() as any;
@@ -164,7 +184,13 @@ export async function updateItemInDb(id: string, updates: Partial<InventoryItem>
     if (updates.notes !== undefined) payload.notes = updates.notes;
     if (updates.barcode_image_url !== undefined) payload.barcode_image_url = updates.barcode_image_url;
 
-    const { error } = await supabase.from("items").update(payload).eq("id", id);
+    let { error } = await supabase.from("items").update(payload).eq("id", id);
+    if (error && error.message && error.message.includes("opened_date")) {
+      delete payload.opened_date;
+      const retry = await supabase.from("items").update(payload).eq("id", id);
+      error = retry.error;
+    }
+
     if (error) {
       console.warn("Failed to update item in Supabase:", error.message);
       return false;
