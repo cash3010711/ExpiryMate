@@ -160,25 +160,30 @@ export default function HomePage() {
           });
         } else {
           // If cloud has no items for this household yet, upload local items to cloud
-          for (const item of items) {
-            await insertItemToDb({
-              household_id: hh.id,
-              type: item.type,
-              title: item.title,
-              category_or_location: item.category_or_location,
-              expiry_date: item.expiry_date,
-              quantity: item.quantity,
-              is_opened: item.is_opened,
-              opened_date: item.opened_date || null,
-              barcode_image_url: item.barcode_image_url || null,
-              notes: item.notes || null,
-              status: item.status,
-            });
-          }
-          const fresh = await fetchHouseholdItems(hh.id);
-          if (fresh.length > 0) {
-            setItems(fresh);
-          }
+          setItems((prev) => {
+            (async () => {
+              for (const item of prev) {
+                await insertItemToDb({
+                  household_id: hh.id,
+                  type: item.type,
+                  title: item.title,
+                  category_or_location: item.category_or_location,
+                  expiry_date: item.expiry_date,
+                  quantity: item.quantity,
+                  is_opened: item.is_opened,
+                  opened_date: item.opened_date || null,
+                  barcode_image_url: item.barcode_image_url || null,
+                  notes: item.notes || null,
+                  status: item.status,
+                });
+              }
+              const fresh = await fetchHouseholdItems(hh.id);
+              if (fresh.length > 0) {
+                setItems(fresh);
+              }
+            })();
+            return prev;
+          });
         }
         setSyncStatus("synced");
         return;
@@ -187,7 +192,7 @@ export default function HomePage() {
       console.warn("Cloud sync failed, continuing offline/local:", err);
     }
     setSyncStatus("offline");
-  }, [household.name, household.inviteCode, items]);
+  }, [household.name, household.inviteCode]);
 
   useEffect(() => {
     syncWithCloud();
