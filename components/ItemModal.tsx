@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { InventoryItem, ItemType } from "@/lib/expiration/engine";
 import { X, Plus, Check } from "lucide-react";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 
 interface ItemModalProps {
   isOpen: boolean;
@@ -29,6 +30,9 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [barcodeImageUrl, setBarcodeImageUrl] = useState("");
   const [notes, setNotes] = useState("");
 
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(isOpen, backdropRef);
+
   useEffect(() => {
     if (editingItem) {
       setType(editingItem.type);
@@ -41,7 +45,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
         editingItem.opened_date ||
           (editingItem.is_opened ? new Date().toISOString().split("T")[0] : "")
       );
-      setBarcodeImageUrl(editingItem.barcode_image_url || "");
       setNotes(editingItem.notes || "");
     } else {
       setType(initialType);
@@ -53,7 +56,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       setQuantity(1);
       setIsOpened(false);
       setOpenedDate(new Date().toISOString().split("T")[0]);
-      setBarcodeImageUrl("");
       setNotes("");
     }
   }, [editingItem, initialType, isOpen]);
@@ -73,7 +75,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
       quantity,
       is_opened: isOpened,
       opened_date: isOpened ? (openedDate || new Date().toISOString().split("T")[0]) : null,
-      barcode_image_url: barcodeImageUrl.trim() || null,
       notes: notes.trim() || null,
     });
     onClose();
@@ -81,8 +82,14 @@ export const ItemModal: React.FC<ItemModalProps> = ({
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <div
+        ref={backdropRef}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
+        className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm overscroll-contain"
+      >
+        <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl relative max-h-[90vh] overflow-y-auto overscroll-contain">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
@@ -255,19 +262,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
                       className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    條碼序號 / 兌換代碼
-                  </label>
-                  <input
-                    type="text"
-                    value={barcodeImageUrl}
-                    onChange={(e) => setBarcodeImageUrl(e.target.value)}
-                    placeholder="點擊智慧辨識掃描或輸入代碼"
-                    className="w-full text-sm border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-emerald-500 font-mono"
-                  />
                 </div>
               </div>
             )}

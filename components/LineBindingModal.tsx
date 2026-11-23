@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { MessageSquare, Copy, Check, X, ShieldAlert, Sparkles } from "lucide-react";
 import { generateBindingCode } from "@/lib/household/binding-code";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 
 interface LineBindingModalProps {
   isOpen: boolean;
@@ -18,6 +19,9 @@ export const LineBindingModal: React.FC<LineBindingModalProps> = ({
   const [bindCode, setBindCode] = useState(() => generateBindingCode(4));
   const [copied, setCopied] = useState(false);
   const [simulatedStatus, setSimulatedStatus] = useState<string | null>(null);
+
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(isOpen, backdropRef);
 
   if (!isOpen) return null;
 
@@ -69,8 +73,14 @@ export const LineBindingModal: React.FC<LineBindingModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
+    <div
+      ref={backdropRef}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm overscroll-contain"
+    >
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overscroll-contain">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"

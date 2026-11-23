@@ -335,7 +335,10 @@ export default function HomePage() {
       />
 
       <main className="max-w-md w-full mx-auto px-4 pt-4 flex-1">
-        <PullToRefresh onRefresh={syncWithCloud}>
+        <PullToRefresh
+          onRefresh={syncWithCloud}
+          disabled={isItemModalOpen || isHouseholdModalOpen || isLineModalOpen}
+        >
           {/* Cloud Sync Status Indicator */}
         <div className="flex items-center justify-between text-[11px] px-2 py-1 mb-2 text-slate-500 bg-white rounded-lg border border-slate-200/60 shadow-xs">
           <span className="flex items-center gap-1.5 font-medium">

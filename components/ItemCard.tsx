@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { InventoryItem, getUrgencyStatus, formatOpenedBadge } from "@/lib/expiration/engine";
-import { Check, Trash2, RotateCcw, QrCode, AlertCircle, Clock } from "lucide-react";
+import { Check, Trash2, RotateCcw, AlertCircle, Clock } from "lucide-react";
 
 interface ItemCardProps {
   item: InventoryItem;
@@ -19,7 +19,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
   onUpdateQuantity,
   onMarkOpened,
 }) => {
-  const [showBarcode, setShowBarcode] = useState(false);
   const urgency = getUrgencyStatus(item.expiry_date);
 
   const isFood = item.type === "food";
@@ -119,19 +118,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         )}
       </div>
 
-      {/* Barcode button if coupon has barcode or image */}
-      {item.barcode_image_url && (
-        <div className="mb-3">
-          <button
-            onClick={() => setShowBarcode(true)}
-            className="text-xs inline-flex items-center gap-1.5 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 px-2.5 py-1.5 rounded-lg font-medium transition"
-          >
-            <QrCode className="w-3.5 h-3.5" />
-            查看條碼 / 兌換憑證
-          </button>
-        </div>
-      )}
-
       {/* Action Buttons */}
       <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
         {item.status === "active" ? (
@@ -163,35 +149,6 @@ export const ItemCard: React.FC<ItemCardProps> = ({
         )}
       </div>
 
-      {/* Barcode Modal Dialog */}
-      {showBarcode && (
-        <div
-          role="dialog"
-          aria-label="條碼憑證"
-          className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm"
-          onClick={() => setShowBarcode(false)}
-        >
-          <div
-            className="bg-white rounded-2xl p-6 max-w-xs w-full text-center shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h4 className="font-bold text-slate-800 text-lg mb-1">{item.title}</h4>
-            <p className="text-xs text-slate-500 mb-4">請向店員出示此條碼進行折抵</p>
-            <div className="bg-white border-2 border-dashed border-slate-300 rounded-xl p-4 flex flex-col items-center justify-center mb-4">
-              <QrCode className="w-36 h-36 text-slate-800" />
-              <span className="font-mono text-sm tracking-widest text-slate-700 mt-2">
-                {item.barcode_image_url}
-              </span>
-            </div>
-            <button
-              onClick={() => setShowBarcode(false)}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-2 rounded-xl text-sm transition"
-            >
-              關閉
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

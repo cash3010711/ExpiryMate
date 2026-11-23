@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Users, Copy, Check, UserPlus, Home, X } from "lucide-react";
 import { validateInviteCode, normalizeInviteCode, generateInviteCode } from "@/lib/household/invite-code";
+import { useBodyScrollLock } from "@/lib/hooks/use-body-scroll-lock";
 
 interface HouseholdModalProps {
   isOpen: boolean;
@@ -24,6 +25,9 @@ export const HouseholdModal: React.FC<HouseholdModalProps> = ({
   const [errorMsg, setErrorMsg] = useState("");
   const [newHouseholdName, setNewHouseholdName] = useState("");
   const [mode, setMode] = useState<"view" | "join" | "create">("view");
+
+  const backdropRef = useRef<HTMLDivElement>(null);
+  useBodyScrollLock(isOpen, backdropRef);
 
   if (!isOpen) return null;
 
@@ -63,8 +67,14 @@ export const HouseholdModal: React.FC<HouseholdModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative">
+    <div
+      ref={backdropRef}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm overscroll-contain"
+    >
+      <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl relative overscroll-contain">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"

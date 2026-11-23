@@ -163,6 +163,23 @@ describe("ItemModal Opened Date Support", () => {
     expect(dateInput).toBeDefined();
     expect(dateInput.value).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   });
+
+  it("locks body scroll when isOpen is true and restores it when unmounted", () => {
+    document.body.style.overflow = "auto";
+
+    const { unmount } = render(
+      <ItemModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onSave={vi.fn()}
+      />
+    );
+
+    expect(document.body.style.overflow).toBe("hidden");
+
+    unmount();
+    expect(document.body.style.overflow).toBe("auto");
+  });
 });
 
 describe("PullToRefresh Gesture & States", () => {
