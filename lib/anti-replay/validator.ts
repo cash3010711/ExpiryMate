@@ -182,9 +182,14 @@ export function validateCronRequest(
     return { valid: false, error: "Unauthorized: Invalid or missing CRON_SECRET" };
   }
 
-  // Check timestamp & nonce
+  // If invoked via Vercel Cron (x-vercel-cron header), allow native execution if secret matches
+  const isVercelCron = Boolean(getHeader("x-vercel-cron"));
   const rawTimestamp = getHeader("x-cron-timestamp") || getHeader("x-timestamp");
   const nonce = getHeader("x-cron-nonce") || getHeader("x-nonce");
+
+  if (isVercelCron && !rawTimestamp && !nonce) {
+    return { valid: true };
+  }
 
   return validateAntiReplay({
     timestamp: rawTimestamp,

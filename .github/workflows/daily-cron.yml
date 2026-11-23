@@ -1,0 +1,30 @@
+name: Daily Morning Expiration Digest
+
+on:
+  schedule:
+    # 00:30 UTC = 08:30 Taiwan Time (UTC+8)
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-expirations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Expiration Cron API
+        run: |
+          NOW=$(date +%s%3N)
+          NONCE="gh-action-${NOW}-${{ github.run_id }}"
+          APP_URL="${{ secrets.APP_URL }}"
+          CRON_SECRET="${{ secrets.CRON_SECRET }}"
+
+          if [ -z "$APP_URL" ]; then
+            echo "Warning: APP_URL secret is not set. Skipping."
+            exit 0
+          fi
+
+          curl -X POST "${APP_URL}/api/cron/check-expirations" \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "x-cron-timestamp: ${NOW}" \
+            -H "x-cron-nonce: ${NONCE}" \
+            -H "Content-Type: application/json" \
+            --fail --show-error

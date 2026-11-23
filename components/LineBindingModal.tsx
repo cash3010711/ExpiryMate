@@ -9,16 +9,25 @@ interface LineBindingModalProps {
   isOpen: boolean;
   onClose: () => void;
   householdName: string;
+  inviteCode?: string;
 }
 
 export const LineBindingModal: React.FC<LineBindingModalProps> = ({
   isOpen,
   onClose,
   householdName,
+  inviteCode,
 }) => {
-  const [bindCode, setBindCode] = useState(() => generateBindingCode(4));
+  const currentCode = inviteCode ? `#BIND-${inviteCode.toUpperCase()}` : generateBindingCode(4);
+  const [bindCode, setBindCode] = useState(() => currentCode);
   const [copied, setCopied] = useState(false);
   const [simulatedStatus, setSimulatedStatus] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (inviteCode) {
+      setBindCode(`#BIND-${inviteCode.toUpperCase()}`);
+    }
+  }, [inviteCode]);
 
   const backdropRef = useRef<HTMLDivElement>(null);
   useBodyScrollLock(isOpen, backdropRef);

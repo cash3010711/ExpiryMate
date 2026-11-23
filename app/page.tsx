@@ -527,6 +527,7 @@ export default function HomePage() {
         isOpen={isLineModalOpen}
         onClose={() => setIsLineModalOpen(false)}
         householdName={household.name}
+        inviteCode={household.inviteCode}
       />
     </div>
   );
