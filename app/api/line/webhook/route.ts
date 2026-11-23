@@ -137,15 +137,32 @@ export async function POST(req: NextRequest) {
               }
 
               if (targetHouseholdId && targetGroupId) {
-                await supabase.from("line_bindings").upsert(
-                  {
+                // Check if binding for this group already exists to avoid ON CONFLICT constraint mismatch
+                const { data: existingGroup } = await supabase
+                  .from("line_bindings")
+                  .select("id")
+                  .eq("line_group_id", targetGroupId)
+                  .maybeSingle();
+
+                const safeBindCode = bindingCode.length > 10 ? codeSuffix : bindingCode;
+
+                if (existingGroup && existingGroup.id) {
+                  await supabase
+                    .from("line_bindings")
+                    .update({
+                      household_id: targetHouseholdId,
+                      temp_bind_code: safeBindCode,
+                      bound_at: new Date().toISOString(),
+                    })
+                    .eq("id", existingGroup.id);
+                } else {
+                  await supabase.from("line_bindings").insert({
                     household_id: targetHouseholdId,
                     line_group_id: targetGroupId,
-                    temp_bind_code: bindingCode,
+                    temp_bind_code: safeBindCode,
                     bound_at: new Date().toISOString(),
-                  },
-                  { onConflict: "line_group_id" }
-                );
+                  });
+                }
               }
             } catch (dbErr) {
               console.warn("Supabase line binding sync notice:", dbErr);
