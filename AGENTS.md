@@ -15,7 +15,7 @@ ExpiryMate is a mobile-first Progressive Web App (PWA) designed to track expirat
 - **`components/`**:
   - `PullToRefresh.tsx`: Mobile touch gesture pull-to-refresh component with dynamic status text ("下拉刷新" / "放開立即更新" / "正在同步..."), damping drag resistance, and haptic feedback.
   - `ItemCard.tsx`: Display cards with quick `[-1]` decrement button for multi-item packs, one-click "標記開封" action, and traffic-light urgency badges.
-  - `ItemModal.tsx`: Creation and edit dialog with opened date picker and smart camera/OCR capture.
+  - `ItemModal.tsx`: Creation and edit dialog with opened date picker.
 - **`lib/household/`**:
   - `invite-code.ts`: Cryptographically secure 6-character uppercase alphanumeric code generation and normalization.
   - `binding-code.ts`: Temporary household LINE group binding code `#BIND-XXXX` generation and regex extraction.

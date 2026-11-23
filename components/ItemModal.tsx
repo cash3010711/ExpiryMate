@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { InventoryItem, ItemType } from "@/lib/expiration/engine";
-import { SmartCaptureModal } from "./SmartCaptureModal";
-import { X, Sparkles, Plus, Check } from "lucide-react";
+import { X, Plus, Check } from "lucide-react";
 
 interface ItemModalProps {
   isOpen: boolean;
@@ -29,7 +28,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
   const [openedDate, setOpenedDate] = useState("");
   const [barcodeImageUrl, setBarcodeImageUrl] = useState("");
   const [notes, setNotes] = useState("");
-  const [showCaptureModal, setShowCaptureModal] = useState(false);
 
   useEffect(() => {
     if (editingItem) {
@@ -146,21 +144,11 @@ export const ItemModal: React.FC<ItemModalProps> = ({
               />
             </div>
 
-            {/* Expiration Date with Smart Capture trigger */}
+            {/* Expiration Date */}
             <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-slate-700">
-                  有效到期日 *
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowCaptureModal(true)}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium inline-flex items-center gap-1"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  智慧拍照辨識
-                </button>
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                有效到期日 *
+              </label>
               <input
                 type="date"
                 required
@@ -317,15 +305,6 @@ export const ItemModal: React.FC<ItemModalProps> = ({
           </form>
         </div>
       </div>
-
-      <SmartCaptureModal
-        isOpen={showCaptureModal}
-        onClose={() => setShowCaptureModal(false)}
-        onDetected={(data) => {
-          if (data.expiryDate) setExpiryDate(data.expiryDate);
-          if (data.barcode) setBarcodeImageUrl(data.barcode);
-        }}
-      />
     </>
   );
 };
