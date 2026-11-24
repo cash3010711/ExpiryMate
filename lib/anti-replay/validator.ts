@@ -182,12 +182,13 @@ export function validateCronRequest(
     return { valid: false, error: "Unauthorized: Invalid or missing CRON_SECRET" };
   }
 
-  // If invoked via Vercel Cron (x-vercel-cron header), allow native execution if secret matches
-  const isVercelCron = Boolean(getHeader("x-vercel-cron"));
+  // If invoked via Vercel Cron (user-agent: vercel-cron or x-vercel-cron), or without anti-replay headers
+  const userAgent = getHeader("user-agent") || "";
+  const isVercelCron = Boolean(getHeader("x-vercel-cron")) || userAgent.toLowerCase().includes("vercel-cron");
   const rawTimestamp = getHeader("x-cron-timestamp") || getHeader("x-timestamp");
   const nonce = getHeader("x-cron-nonce") || getHeader("x-nonce");
 
-  if (isVercelCron && !rawTimestamp && !nonce) {
+  if ((isVercelCron || (!rawTimestamp && !nonce)) && !rawTimestamp && !nonce) {
     return { valid: true };
   }
 
